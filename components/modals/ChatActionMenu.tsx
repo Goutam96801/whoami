@@ -33,15 +33,16 @@ export default function ChatActionMenu({
           style={{
             position: "absolute",
             top: position.y - 20,
-            left:  position.x === 0 ? 24 : position.x - 140,
+            left: position.x === 0 ? 24 : position.x - 140,
           }}
         >
           <LinearGradient
-            colors={["#5b3a5a", "#0f2633"]}
+            colors={["#FADADD", "#E6D9FF", "#E6F2FF"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             className="w-48 rounded-xl overflow-hidden"
           >
+
             <View className="border border-white/15 bg-white/10 py-2">
 
               {/* Pin */}
@@ -49,7 +50,7 @@ export default function ChatActionMenu({
                 icon="pin"
                 label={chat.isPinned ? "Unpin chat" : "Pin chat"}
                 onPress={onPin}
-                color="#fbbf24"
+                color="#5C054B"
               />
 
               <Divider />
@@ -59,7 +60,7 @@ export default function ChatActionMenu({
                 icon="ban"
                 label={chat.isBlocked ? "Unblock user" : "Block user"}
                 onPress={onBlock}
-                color="#fb7185"
+                color="#470E3C"
               />
 
               <Divider />
@@ -96,9 +97,8 @@ function ActionItem({
     >
       <Ionicons name={icon} size={16} color={color} />
       <Text
-        className={`font-rubik text-sm ${
-          destructive ? "text-red-400" : "text-white"
-        }`}
+        className={`font-rubik text-sm ${destructive ? "text-red-400" : "text-black-700"
+          }`}
       >
         {label}
       </Text>

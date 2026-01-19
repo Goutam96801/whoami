@@ -5,6 +5,7 @@ import send from "@/assets/icons/send.png";
 import backArrow from "@/assets/icons/back-arrow.png";
 import logout from "@/assets/icons/logout.png";
 import rightArrow from "@/assets/icons/right-arrow.png";
+import appIcon from "@/assets/icons/App Icon.png";
 
 export default {
     emoji,
@@ -14,4 +15,5 @@ export default {
     backArrow,
     logout,
     rightArrow,
+    appIcon,
 };

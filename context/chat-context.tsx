@@ -1,6 +1,8 @@
-import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { io, Socket } from "socket.io-client";
 import { api, API_SOCKET_URL } from "@/lib/api";
+import { sendLocalNotification } from "@/lib/notifications";
 import { useAuth } from "@/context/auth-context";
 
 type ChatUser = {
@@ -10,6 +12,9 @@ type ChatUser = {
   isOnline?: boolean;
   lastSeen?: string;
   updatedAt?: string;
+  dateOfBirth?: string;
+  interests?: string[];
+  gender?: string;
 };
 
 export type ChatMessage = {
@@ -17,6 +22,17 @@ export type ChatMessage = {
   senderId: string;
   receiverId: string;
   message: string;
+  imageUrl?: string;
+  streakCount?: number;
+  replyTo?:
+    | string
+    | {
+        _id: string;
+        message?: string;
+        imageUrl?: string;
+        senderId?: string;
+        createdAt?: string;
+      };
   createdAt: string;
 };
 
@@ -25,6 +41,8 @@ export type ChatPreview = {
   user: ChatUser | null;
   lastMessage: ChatMessage | null;
   updatedAt: string;
+  unreadCount?: number;
+  streakCount?: number;
   isPinned?: boolean;
   isBlocked?: boolean;
   isBlockedByOther?: boolean;
@@ -36,6 +54,8 @@ type ChatContextValue = {
   refreshConversations: () => Promise<void>;
   unreadCounts: Record<string, number>;
   onlineUserIds: string[];
+  typingUsers: Record<string, boolean>;
+  sendTyping: (userId: string, isTyping: boolean) => void;
   deleteConversation: (conversationId: string, userId: string | null) => Promise<void>;
   togglePinConversation: (conversationId: string, shouldPin: boolean) => Promise<void>;
   toggleBlockConversation: (conversationId: string, shouldBlock: boolean) => Promise<void>;
@@ -47,6 +67,7 @@ type ChatContextValue = {
 };
 
 const ChatContext = createContext<ChatContextValue | undefined>(undefined);
+const UNREAD_KEY_PREFIX = "whoami.unreadCounts.";
 
 export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuth();
@@ -55,8 +76,10 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
   const [loadingConversations, setLoadingConversations] = useState(true);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const [onlineUserIds, setOnlineUserIds] = useState<string[]>([]);
+  const [typingUsers, setTypingUsers] = useState<Record<string, boolean>>({});
   const [activeChatUserId, setActiveChatUserIdState] = useState<string | null>(null);
   const [latestMessage, setLatestMessage] = useState<ChatMessage | null>(null);
+  const prevUnreadRef = useRef<Record<string, number>>({});
 
   const refreshConversations = useCallback(async () => {
     if (!user?.id) {
@@ -65,8 +88,37 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
     const response = await api.get<ChatPreview[]>("/message/conversations");
     if (Array.isArray(response)) {
       setConversations(response);
+      const nextUnread: Record<string, number> = {};
+      response.forEach((conv) => {
+        const userId = conv.user?._id;
+        if (userId) {
+          nextUnread[userId] = conv.unreadCount ?? 0;
+        }
+      });
+      setUnreadCounts(nextUnread);
+
+      Object.entries(nextUnread).forEach(([otherUserId, count]) => {
+        if (!count) {
+          return;
+        }
+        if (activeChatUserId && activeChatUserId === otherUserId) {
+          return;
+        }
+        const prevCount = prevUnreadRef.current[otherUserId] ?? 0;
+        if (count > prevCount) {
+          const chatUser = response.find((conv) => conv.user?._id === otherUserId)?.user;
+          const title = chatUser?.username ?? "New message";
+          sendLocalNotification("message", {
+            title,
+            body: `You have ${count} unread message${count > 1 ? "s" : ""}.`,
+            data: { userId: otherUserId },
+          }).catch(() => null);
+        }
+      });
+
+      prevUnreadRef.current = nextUnread;
     }
-  }, [user?.id]);
+  }, [activeChatUserId, user?.id]);
 
   const markConversationRead = useCallback((userId: string) => {
     setUnreadCounts((prev) => {
@@ -75,6 +127,7 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
       }
       const next = { ...prev };
       delete next[userId];
+      prevUnreadRef.current = { ...prevUnreadRef.current, [userId]: 0 };
       return next;
     });
   }, []);
@@ -106,6 +159,10 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
           user: existing?.user ?? otherUser ?? null,
           lastMessage: message,
           updatedAt: message.createdAt,
+          streakCount:
+            typeof message.streakCount === "number"
+              ? message.streakCount
+              : existing?.streakCount,
           isPinned: existing?.isPinned,
           isBlocked: existing?.isBlocked,
           isBlockedByOther: existing?.isBlockedByOther,
@@ -170,6 +227,16 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
     );
   }, []);
 
+  const sendTyping = useCallback(
+    (receiverId: string, isTyping: boolean) => {
+      if (!socket || !receiverId) {
+        return;
+      }
+      socket.emit("typing", { to: receiverId, isTyping });
+    },
+    [socket],
+  );
+
   useEffect(() => {
     let active = true;
     const loadConversations = async () => {
@@ -207,6 +274,8 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
       socket?.disconnect();
       setSocket(null);
       setOnlineUserIds([]);
+      setTypingUsers({});
+      setUnreadCounts({});
       return;
     }
 
@@ -223,6 +292,41 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
   }, [user?.id]);
 
   useEffect(() => {
+    const loadUnreadCounts = async () => {
+      if (!user?.id) {
+        return;
+      }
+      try {
+        const raw = await AsyncStorage.getItem(`${UNREAD_KEY_PREFIX}${user.id}`);
+        if (!raw) {
+          setUnreadCounts({});
+          return;
+        }
+        const parsed = JSON.parse(raw) as Record<string, number>;
+        if (parsed && typeof parsed === "object") {
+          setUnreadCounts(parsed);
+        } else {
+          setUnreadCounts({});
+        }
+      } catch {
+        setUnreadCounts({});
+      }
+    };
+
+    loadUnreadCounts();
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) {
+      return;
+    }
+    AsyncStorage.setItem(
+      `${UNREAD_KEY_PREFIX}${user.id}`,
+      JSON.stringify(unreadCounts),
+    ).catch(() => null);
+  }, [unreadCounts, user?.id]);
+
+  useEffect(() => {
     if (!socket || !user?.id) {
       return;
     }
@@ -231,6 +335,17 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
       if (Array.isArray(users)) {
         setOnlineUserIds(users);
       }
+    };
+
+    const handleTyping = (payload: { from?: string; isTyping?: boolean }) => {
+      const from = payload?.from;
+      if (!from) {
+        return;
+      }
+      setTypingUsers((prev) => ({
+        ...prev,
+        [from]: Boolean(payload?.isTyping),
+      }));
     };
 
     const handleIncoming = (message: ChatMessage) => {
@@ -248,19 +363,39 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
           ...prev,
           [otherUserId]: (prev[otherUserId] ?? 0) + 1,
         }));
+
+        const sender = conversations.find((conv) => conv.user?._id === otherUserId)?.user;
+        const title = sender?.username ?? "New message";
+        const body = message.message?.slice(0, 120) ?? "You received a new message.";
+        sendLocalNotification("message", {
+          title,
+          body,
+          data: { userId: otherUserId },
+        }).catch(() => null);
       }
 
       if (!hasConversation) {
         refreshConversations().catch(() => null);
       }
+
+      setTypingUsers((prev) => {
+        if (!prev[otherUserId]) {
+          return prev;
+        }
+        const next = { ...prev };
+        delete next[otherUserId];
+        return next;
+      });
     };
 
     socket.on("newMessage", handleIncoming);
     socket.on("getOnlineUsers", handleOnlineUsers);
+    socket.on("typing", handleTyping);
 
     return () => {
       socket.off("newMessage", handleIncoming);
       socket.off("getOnlineUsers", handleOnlineUsers);
+      socket.off("typing", handleTyping);
     };
   }, [
     activeChatUserId,
@@ -279,6 +414,8 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
         refreshConversations,
         unreadCounts,
         onlineUserIds,
+        typingUsers,
+        sendTyping,
         deleteConversation,
         togglePinConversation,
         toggleBlockConversation,

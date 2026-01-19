@@ -11,15 +11,15 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: "rgba(26, 20, 35, 0.96)",
+          backgroundColor: "rgba(220, 214, 234, 0.96)",
           borderTopWidth: 0,
-          height: 64,
+          height: 84,
           paddingBottom: 8,
           paddingTop: 6,
-          borderRadius: 0,
+          borderRadius: 20,
           position: "absolute",
         },
-        tabBarActiveTintColor: "#fbbf24",
+        tabBarActiveTintColor: "#333",
         tabBarInactiveTintColor: "#94a3b8",
         tabBarLabelStyle: {
           fontFamily: "Rubik-Medium",

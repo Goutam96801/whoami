@@ -17,23 +17,29 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#ffffff",
-        "foregroundImage": "./assets/images/main.png"
+        "foregroundImage": "./assets/images/adaptive-icon.png"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "softwareKeyboardLayoutMode": "resize",
-      "permissions": ["READ_MEDIA_IMAGES", "READ_EXTERNAL_STORAGE"]
+      "permissions": [
+        "POST_NOTIFICATIONS",
+        "READ_MEDIA_IMAGES",
+        "READ_EXTERNAL_STORAGE"
+      ],
+      "package": "com.goutam96801.whoami",
+      "versionCode": 1
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/icon.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/images/icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
@@ -42,22 +48,30 @@
           }
         }
       ],
-       [
+      [
         "expo-font",
         {
           "fonts": [
             "./assets/fonts/Rubik-Regular.ttf",
             "./assets/fonts/Rubik-Medium.ttf",
             "./assets/fonts/Rubik-SemiBold.ttf",
-            "./assets/fonts/Rubik-Bold.ttf",
-            "./assets/fonts/Rubik-Light.ttf"
+            "./assets/fonts/Rubik-Bold.ttf"
           ]
         }
+      ],
+      [
+        "expo-notifications"
       ]
     ],
     "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true
-    }
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "06c5f379-a5f5-408c-bab3-7a357257c54c"
+      }
+    },
+    "owner": "goutam96801"
   }
 }

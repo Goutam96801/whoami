@@ -1,7 +1,7 @@
 import { Platform } from "react-native";
 
 const API_PORT = 8080;
-
+// const REMOTE_API_BASE_URL = "https://whoami-backend-0o5r.onrender.com/api/v1";
 export const API_BASE_URL =
   Platform.select({
     android: `http://192.168.31.57:8080/api/v1`,

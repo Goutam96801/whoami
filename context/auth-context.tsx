@@ -8,12 +8,14 @@ type SessionUser = {
   id: string;
   username: string;
   profilePhoto?: string;
+  dateOfBirth?: string;
 };
 
 type AuthResponse = {
   _id: string;
   username: string;
   profilePhoto?: string;
+  dateOfBirth?: string;
 };
 
 type AuthResult =
@@ -28,13 +30,19 @@ type SignUpPayload = {
   password: string;
   confirmPassword: string;
   gender: Gender;
+  dateOfBirth: string;
   profilePhoto?: string;
+  interests?: string[];
 };
 
-type UpdateProfilePayload = {
+export type UpdateProfilePayload = {
   username?: string;
   profilePhoto?: string;
+  gender?: Gender;
+  dateOfBirth?: string; // ISO string
+  interests?: string[];
 };
+
 
 type AuthContextValue = {
   user: SessionUser | null;
@@ -102,6 +110,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         id: payload._id,
         username: payload.username,
         profilePhoto: payload.profilePhoto,
+        dateOfBirth: payload.dateOfBirth,
       };
 
       setUser(session);
@@ -120,6 +129,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         id: response._id,
         username: response.username,
         profilePhoto: response.profilePhoto,
+        dateOfBirth: response.dateOfBirth,
       };
 
       setUser(session);
@@ -142,23 +152,30 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const updateProfile = async (payload: UpdateProfilePayload): Promise<AuthResult> => {
-    try {
-      const response = await api.patch<AuthResponse>("/user/profile", payload);
-      const session = {
-        id: response._id,
-        username: response.username,
-        profilePhoto: response.profilePhoto,
-      };
+const updateProfile = async (
+  payload: UpdateProfilePayload,
+): Promise<AuthResult> => {
+  try {
+    const response = await api.patch<AuthResponse>("/user/profile", payload);
 
-      setUser(session);
-      await persistSession(session);
-      return { ok: true };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Unable to update profile.";
-      return { ok: false, error: message };
-    }
-  };
+    const session = {
+      id: response._id,
+      username: response.username,
+      profilePhoto: response.profilePhoto,
+      dateOfBirth: response.dateOfBirth ?? user?.dateOfBirth,
+    };
+
+    setUser(session);
+    await persistSession(session);
+
+    return { ok: true };
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Unable to update profile.";
+    return { ok: false, error: message };
+  }
+};
+
 
   const uploadProfilePhoto = async (image: string): Promise<AuthResult> => {
     try {
@@ -167,6 +184,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         id: response._id,
         username: response.username,
         profilePhoto: response.profilePhoto,
+        dateOfBirth: response.dateOfBirth ?? user?.dateOfBirth,
       };
 
       setUser(session);

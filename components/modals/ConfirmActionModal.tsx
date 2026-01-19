@@ -1,4 +1,3 @@
-import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { ActivityIndicator, Modal, Text, TouchableOpacity, View } from "react-native";
 import { useState } from "react";
@@ -47,11 +46,7 @@ export function ConfirmActionModal({
       <View className="flex-1 items-center justify-center bg-black/10 px-4">
 
         {/* Glass Container */}
-        <BlurView
-          intensity={60}
-          tint="dark"
-          className="w-full max-w-md rounded-2xl overflow-hidden"
-        >
+        <View className="w-full max-w-md rounded-2xl overflow-hidden bg-black/60">
           <LinearGradient
             colors={["#5b3a5a", "#0f2633"]}
             start={{ x: 0, y: 0 }}
@@ -107,7 +102,7 @@ export function ConfirmActionModal({
 
             </View>
           </LinearGradient>
-        </BlurView>
+        </View>
       </View>
     </Modal>
   );
