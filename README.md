@@ -1,5 +1,5 @@
 # Welcome to your Expo app 👋
-
+## NOTE: Backend github repo is this: https://github.com/Goutam96801/whoami-backend
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 
 ## Get started
