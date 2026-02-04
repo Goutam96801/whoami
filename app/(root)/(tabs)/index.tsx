@@ -18,6 +18,7 @@ import { ConfirmActionModal } from "@/components/modals/ConfirmActionModal";
 import { useToast } from "@/components/ToastProvider";
 import OnboardingBackground from "@/components/OnboardingBackground";
 import { api } from "@/lib/api";
+import icons from "@/constants/icons";
 
 type SimpleUser = {
   _id: string;
@@ -413,7 +414,11 @@ export default function Index() {
                     </View>
                   ) : (
                     <View className="py-10 items-center">
-                      <Text className="text-sm text-slate-200 font-rubik">
+                      <Image 
+                      source={icons.appIcon}
+                      style={{width:200, height:200}}
+                      />
+                      <Text className="text-base text-slate-500 font-rubik">
                         Find people to chat with in search.
                       </Text>
                       <Pressable

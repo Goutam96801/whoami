@@ -4,7 +4,7 @@
     "slug": "whoami",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/icons/App Icon.png",
     "scheme": "whoami",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -17,7 +17,7 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#ffffff",
-        "foregroundImage": "./assets/images/adaptive-icon.png"
+        "foregroundImage": "./assets/icons/App Icon.png"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
@@ -32,14 +32,14 @@
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/icon.png"
+      "favicon": "./assets/icons/App Icon.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/icon.png",
+          "image": "./assets/images/splash-screen.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
@@ -61,7 +61,8 @@
       ],
       [
         "expo-notifications"
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true
@@ -69,7 +70,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "06c5f379-a5f5-408c-bab3-7a357257c54c"
+        "projectId": "53ccc221-8927-4c88-8228-c54c9ca6d8a2"
       }
     },
     "owner": "goutam96801"
